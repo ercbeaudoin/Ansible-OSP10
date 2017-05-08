@@ -1,0 +1,6 @@
+openstack overcloud deploy --templates ~/my_templates/ \
+   --ntp-server 8.8.8.8 \
+    --control-flavor control --compute-flavor compute \
+    --control-scale 3 --compute-scale 2 \
+    --neutron-tunnel-types vxlan --neutron-network-type vxlan \
+    --libvirt-type qemu &> /home/stack/overcloud_deploy_noceph.log

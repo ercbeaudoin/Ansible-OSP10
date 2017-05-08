@@ -1,0 +1,23 @@
+---
+## Create Tenant(s)
+#- name: get tenant list
+#  shell: >
+  #    . ~/overcloudrc &&
+  #  openstack project list -c Name | awk 'NR>3 { print $2 }'
+  #register: projects_list
+  #changed_when: false
+  
+  #- name: create tenants
+  #shell: >
+    #  . ~/overcloudrc &&
+    #openstack project create "{{ item }}" 
+    #when: "item not in projects_list.stdout_lines"
+    #with_items: "{{ osp8_projects }}"
+
+## Create user and add to the project
+#- include: createuseradmin.yml
+#  with_items: "{{ osp8_projects }}"
+- include: createnetwork.yml
+- include: createflavor.yml
+- include: createinstance.yml
+- include: modifysecurity.yml

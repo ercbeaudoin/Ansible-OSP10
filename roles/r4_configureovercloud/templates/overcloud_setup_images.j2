@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -eux
+
+source /home/stack/stackrc
+
+openstack overcloud image upload --image-path /home/stack/images/
+
+
+#openstack baremetal import --json instackenv.json
+#openstack baremetal configure boot
+
+#openstack baremetal introspection bulk start
+

@@ -1,0 +1,21 @@
+---
+- name: Get Image list
+  shell: >
+    . ~/overcloudrc &&
+    openstack image list -f json
+  register: images
+  changed_when: false
+
+- name: Copy cirros image
+  copy: 
+    src: cirros.qcow2
+    dest: /home/stack/cirros.qcow2
+  when: '"cirros" not in images.stdout | from_json | map(attribute="Name") | list'
+
+- name: create image cirros
+  shell: >
+    . ~/overcloudrc &&
+    glance image-create --name cirros --disk-format qcow2 \
+    --container-format bare --visibility public --file /home/stack/cirros.qcow2
+  when: '"cirros" not in images.stdout | from_json | map(attribute="Name") | list'
+  

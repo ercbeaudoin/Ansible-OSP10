@@ -1,0 +1,32 @@
+---
+undercloud_name: '"{{ extra_name }}"-undercloud'
+#undercloud_name: undercloud-"{{ extra_name }}"
+undercloud_passwd: Redhat01
+undercloud_image_size: 88014848
+cpu: 4
+mem: 16384
+virt_type: kvm
+virt_hypervisor: hvm
+os:
+  type: linux
+  variant: rhel7
+disk:
+  path: /var/lib/libvirt/images
+net:
+  ip: 192.168.122.253
+  ntmk: 255.255.255.0
+  gtw: 192.168.122.1
+  dns1: 192.168.122.1
+underconfig:
+  - name: UndercloudConfig
+    local_ip: 172.16.0.1/24
+    undercloud_public_vip:  172.16.0.10
+    undercloud_admin_vip: 172.16.0.11
+    local_interface: eth0
+    masquerade_network: 172.16.0.0/24
+    dhcp_start: 172.16.0.20
+    dhcp_end: 172.16.0.120
+    network_cidr: 172.16.0.0/24
+    network_gateway: 172.16.0.1
+    discovery_iprange: 172.16.0.150,172.16.0.180
+

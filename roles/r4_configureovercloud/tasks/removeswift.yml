@@ -1,0 +1,7 @@
+---
+- name: Remove swift if CEPH use
+  shell: sed -i '/Swift/Id' /home/stack/my_templates/advanced-networking.yaml
+
+- name: Remove block if CEPH use
+  shell: sed -i '/Block/Id' /home/stack/my_templates/advanced-networking.yaml
+

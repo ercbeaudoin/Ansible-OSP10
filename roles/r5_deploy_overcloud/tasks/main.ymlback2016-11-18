@@ -1,0 +1,7 @@
+---
+- name: add default route to the external overcloud network
+  shell: sudo ip route add 172.17.1.0/24 via 172.16.0.1
+
+- name: Deploy the overcloud
+  shell: >
+    . ~/stackrc && {{ lookup('template','deployovercloud.j2') }}

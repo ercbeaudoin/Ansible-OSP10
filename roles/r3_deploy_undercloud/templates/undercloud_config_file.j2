@@ -1,0 +1,12 @@
+#!/bin/bash
+openstack-config --set undercloud.conf DEFAULT local_ip {{item.local_ip}}
+openstack-config --set undercloud.conf DEFAULT undercloud_public_vip  {{item.undercloud_public_vip}}
+openstack-config --set undercloud.conf DEFAULT undercloud_admin_vip {{item.undercloud_admin_vip}}
+openstack-config --set undercloud.conf DEFAULT local_interface {{item.local_interface}}
+openstack-config --set undercloud.conf DEFAULT masquerade_network {{item.masquerade_network}}
+openstack-config --set undercloud.conf DEFAULT dhcp_start {{item.dhcp_start}}
+openstack-config --set undercloud.conf DEFAULT dhcp_end {{item.dhcp_end}}
+openstack-config --set undercloud.conf DEFAULT network_cidr {{item.network_cidr}}
+openstack-config --set undercloud.conf DEFAULT network_gateway {{item.network_gateway}}
+openstack-config --set undercloud.conf DEFAULT discovery_iprange {{item.discovery_iprange}}
+

@@ -1,0 +1,22 @@
+---
+- name: Prepare the host server that host the undercloud and overcloud VMs
+  hosts: serverhost
+  pre_tasks:
+    - debug:
+        msg: 'Verify host has default and provisioning virtual network'
+  roles:
+    - role_checkhostnetwork
+  tasks:
+    - debug:
+        msg: 'still busy'
+  post_tasks:
+    - debug: 
+        msg: 'Verification done - Virtual networks OK'
+
+
+#- hosts: host
+#  tasks:
+#  - block:
+#    - include: verify_hostnetwork.yml
+#      tags: verifyhost
+

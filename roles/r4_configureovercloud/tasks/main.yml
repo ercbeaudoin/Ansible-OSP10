@@ -1,0 +1,258 @@
+---
+# Preparing images for overcloud
+- name: count registered openstack images
+  shell: . ~/stackrc && openstack image list -f csv | wc -l
+  register: image_count
+  changed_when: false
+
+- block:
+  - name: Get the overcloud images - rhosp-director-images
+    yum: name=rhosp-director-images state=latest 
+  - name: Get the overcloud images - rhosp-director-images-ipa
+    yum: name=rhosp-director-images-ipa state=latest
+  become: yes
+  become_method: sudo
+  when: image_count.stdout | int < 2
+
+- block:
+  - name: Create images folder
+    file: path=/home/stack/images state=directory mode=0755
+
+  - name: Create template folder
+    file: path=/home/stack/my_templates state=directory mode=0755  
+  
+  - name: Untar full overcloud images
+    unarchive: src=/usr/share/rhosp-director-images/overcloud-full-latest-8.0.tar dest=/home/stack/images/ remote_src=yes
+
+  #  unarchive: src=/usr/share/rhosp-director-images/overcloud-full-latest-8.0.tar dest=/home/stack/images/ remote_src=yes copy=no
+  
+  - name: Untar full Ironic agent
+    unarchive: remote_src=yes src=/usr/share/rhosp-director-images/ironic-python-agent-latest-8.0.tar dest=/home/stack/images/ 
+
+  - name: Load the overcloud images
+    shell: . ~/stackrc && openstack overcloud image upload --image-path /home/stack/images/ > overcloud_setup_images.log 2>&1
+  when: image_count.stdout | int < 2
+
+  #  unarchive: remote_src=yes src=/usr/share/rhosp-director-images/ironic-python-agent-latest-8.0.tar dest=/home/stack/images/ copy=no
+
+
+  #This two commands need to be replace, no need to call a shell script  
+#- name: Copy the scripts to upload the overcloud images
+#  template: src=overcloud_setup_images.j2 dest=/home/stack/overcloud_setup_images.sh owner=stack mode=0755 force=no
+#  register: cp_result
+
+#- name: Load the overcloud images - run the overcloud_setup_images.sh script
+#  shell: /home/stack/overcloud_setup_images.sh > overcloud_setup_images.log 2>&1
+#  when: cp_result.changed
+  ######
+
+- name: Get stack private key
+  shell: echo "$(cat /home/stack/.ssh/id_rsa)"
+  register: stack_priv
+  changed_when: false
+
+- name: Collect the ironic node list
+  shell: >
+    . ~/stackrc &&
+    ironic node-list | grep -v UUID | awk ' { print $2 } ' |egrep -v '^#|^$'
+  register: nodelist
+  changed_when: false
+  ignore_errors: true
+
+- name: Create the json file
+  template: src=instackenv_json.j2 dest=/home/stack/instackenv.jsonorig mode=0644
+  vars:
+    stack_pkey: "{{ stack_priv.stdout }}"
+  register: create_json
+
+- block:
+#  - name: Apply Artcle 1602703 - Avoid ironic Broken pipe
+#    replace:
+  #      dest: /etc/fstab
+  #    regexp: '^//archive/pipeline'
+  #   replace: '#//archive/pipeline'
+
+  - name: delete ironic nodes
+    shell: >
+      . ~/stackrc &&
+      ironic node-delete {{ item }}
+    with_items: "{{ nodelist.stdout_lines }}"      
+    when: not nodelist.stdout == ""
+
+  - name: Run the jq
+    shell: jq . /home/stack/instackenv.jsonorig > ~/instackenv.json
+  
+  - name: Import baremetal nodes to ironic
+    shell: . ~/stackrc && openstack baremetal import --json /home/stack/instackenv.json
+  
+  - name: configure boot
+    shell: . ~/stackrc && openstack baremetal configure boot
+    #  when: create_json.changed
+
+  - name: determine network UUID
+    shell: . ~/stackrc && neutron subnet-list -f csv -F id --quote none | grep -v id
+    changed_when: false
+    register: neutron_uuid
+ 
+  - name: configure DNS for provisioning network
+    shell: . ~/stackrc && neutron subnet-update "{{ neutron_uuid.stdout }}" --dns-nameserver {{ host_net_default_ip }}
+    when: neutron_uuid.stdout_lines|length == 1
+
+  - name: delete ironic flavors using nova due to the bug preventing ironic to delete a flavor
+    #https://bugzilla.redhat.com/show_bug.cgi?id=1317312
+    shell: . ~/stackrc && nova flavor-delete {{ item }}
+    ignore_errors: True
+    with_items:
+      - compute
+      - control
+      - baremetal
+      - ceph
+
+  - name: configure ironic flavors
+    shell: >
+      . ~/stackrc && openstack flavor create --id auto
+      --ram {{ hostvars[groups['osp8-' + item][0]].mem }}
+      --disk {{ hostvars[groups['osp8-' + item][0]].disk.size - 2 }}
+      --vcpus {{ hostvars[groups['osp8-' + item][0]].cpu }}
+      {{ item }}
+    with_items:
+      - compute
+      - control
+      - baremetal
+      - ceph
+    
+  - name: adapt ironic flavors (and match flavor to node profile)
+    shell: >
+      . ~/stackrc && openstack flavor set
+      --property "cpu_arch"="x86_64"
+      --property "capabilities:boot_option"="local"
+      --property "capabilities:profile"="{{ item }}"
+      {{ item }}
+    with_items:
+      - compute
+      - control
+      - baremetal
+      - ceph
+
+  # Now ready for introspection
+  - name: discover nodes - bulk introspection
+    shell: . ~/stackrc &&  openstack baremetal introspection bulk start
+
+  # update all nodes with specific flavor
+  - name: update all nodes with specific flavor
+    include: updateIronicNode.yml
+    with_items: "{{ groups[overcloudnodes] }}"
+  when: create_json.changed
+
+- name: Verify if my_templates folder is empty
+  shell: ls -ltr /home/stack/my_templates |wc -l
+  register: templates_filecounts
+
+- block: 
+  # Modify the default templates
+  - name: Copy the heat templates
+    shell: cp -rf /usr/share/openstack-tripleo-heat-templates/* ~/my_templates/
+
+  - name: create custom install configuration
+    template: src={{ item }}.j2 dest=~/my_templates/{{ item }} mode=0644
+    with_items: 
+      - timezone-environment.yaml
+
+
+    #    - debug.yaml
+    #- CloudDomain.yaml
+    #- scheduler_hints_env.yaml
+    #    - storage-default.yaml
+
+
+  - name: Configure the hieradata to point towards our OSD volumes
+    template: src=ceph.yaml.j2 dest=/home/stack/my_templates/puppet/hieradata/ceph.yaml mode=0777
+    when: '"ceph" in overcloudnodes'
+
+  - name: Create the advanced-network
+    copy:
+      src: /home/stack/my_templates/environments/network-isolation.yaml
+      dest: /home/stack/my_templates/advanced-networking.yaml
+      force: yes
+      remote_src: True
+    when: '"ceph" in overcloudnodes'
+
+  - name: Modify the network path
+    shell: sed -i 's|../network/|/home/stack/my_templates/network/|g' /home/stack/my_templates/advanced-networking.yaml
+    when: '"ceph" in overcloudnodes'
+
+#- block:
+#  - name: Remove swift if CEPH use
+#    shell: sed -i '/Swift/Id' /home/stack/my_templates/advanced-networking.yaml
+
+#  - name: Remove block if CEPH use
+#    shell: sed -i '/Block/Id' /home/stack/my_templates/advanced-networking.yaml
+#  when: '"ceph" in overcloudnodes'
+  - name: Modify the Advance Network to remove swift since using ceph
+    include: removeswift.yml
+    when: '"ceph" in "{{ overcloudnodes }}"'
+
+  - name: overrides for our per-role nic configuration
+    script: roles/r4_configureovercloud/scripts/overrides_per_role_nic_config.sh
+    when: '"ceph" in "{{ overcloudnodes }}"'
+
+  - name: Create nic-configs folder
+    file:
+      path: /home/stack/my_templates/nic-configs/
+      state: directory 
+      mode: 0755
+    when: '"ceph" in "{{ overcloudnodes }}"'
+
+    #- name: Copy the three-nics-vlans.tar.bz2
+    #  copy: src=three-nics-vlans.tar.bz2 dest=/home/stack/my_templates/nic-configs/three-nics-vlans.tar.bz2 mode=0755
+
+    #- name: Untar the three-nics-vlans.tar.bz2
+    #  shell: cd /home/stack/my_templates/nic-configs/ && tar -xvjpf three-nics-vlans.tar.bz2
+
+
+  - name: Copy the nic config files to nic-configs
+    shell: cp -r /usr/share/openstack-tripleo-heat-templates/network/config/bond-with-vlans/* ~/my_templates/nic-configs
+    when: '"ceph" in "{{ overcloudnodes }}"'
+
+    #########
+    # Fix bug https://bugzilla.redhat.com/show_bug.cgi?id=1394894
+    # until openstack-neutron-7.2.0-5
+    #  - name: Fix bug 1394894 - adding ovs_extra bride fail mode
+    #blockinfile:
+      #  dest: /var/www/html/{{ item }}
+      #insertafter: "use_dhcp: false"
+      #content: |
+      #<h1>Welcome to {{ansible_hostname}}</h1>
+      #<p>Last updated on {{ansible_date_time.iso8601}}</p>
+      #with_items: 
+        #- controller.yaml
+        #- ceph.yaml
+        #- compute.yaml
+        #when: '"ceph" in "{{ overcloudnodes }}"'  
+
+    #
+    ######## 
+
+    #    template: src={{ item }}.j2 dest=/home/stack/my_templates/nic-configs/{{ item }} mode=0644
+    #    with_items:
+    #      - "compute.yaml"
+    #  - "controller.yaml"
+    #  - "ceph-storage.yaml"
+    #  - "cinder-storage.yaml"
+    #  - "swift-storage.yaml"
+    #  #      - "ceph.yaml"
+
+  - name: add a few more lines to our advanced-networking
+    script: roles/r4_configureovercloud/scripts/adjust_networking.sh
+    when: '"ceph" in "{{ overcloudnodes }}"'
+
+  - name: create a new first boot configuration to set our nodes
+    script: roles/r4_configureovercloud/scripts/firstboot-environment.sh
+    when: '"ceph" in "{{ overcloudnodes }}"'
+
+  - name: create that firstboot-config
+    script: roles/r4_configureovercloud/scripts/mod_firstboot-environment.sh
+    when: '"ceph" in "{{ overcloudnodes }}"'
+
+  when: templates_filecounts.stdout | int < 2
+

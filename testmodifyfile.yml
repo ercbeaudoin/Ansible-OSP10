@@ -1,0 +1,21 @@
+---
+- name: Configure the undercloud
+  hosts: osp8-undercloud
+  remote_user: stack
+  tasks:
+  - block:
+    - name: Fix bug 1391678 - issues with rhel 7.3 - ipxe checkmodule
+      replace:
+        dest: /usr/share/instack-undercloud/ipxe/post-install.d/86-selinux
+        regexp: '^checkmodule*'
+        replace: 'checkmodule -M -m -o /tmp/ironic-ipxe.mod \$(dirname \$0)/../selinux/ipxe.te'
+                             
+#    - name: Fix bug 1391678 - issues with rhel 7.3 - ipxe sudo
+#      replace:
+#        dest: /usr/share/instack-undercloud/ipxe/post-install.d/86-selinux
+#        regexp:  'sudo semodule_package -m /tmp/ipxe.mod -o /opt/stack/selinux-policy/ipxe.pp'
+#        replace: 'sudo semodule_package -m /tmp/ironic-ipxe.mod -o /opt/stack/selinux-policy/ipxe.pp'
+    become: true
+    become_user: root
+
+

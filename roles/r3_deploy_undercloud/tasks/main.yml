@@ -1,0 +1,132 @@
+---
+# Install the undercloud required packages
+
+#- name: Install yum-plugin-priorities
+#  yum: name=yum-plugin-priorities state=present
+#  sudo: yes
+
+- name: Install python-tripleoclient
+  yum: name=python-tripleoclient state=present
+  sudo: yes
+
+- name: Install openstack-utils
+  yum: name=openstack-utils state=present
+  sudo: yes
+
+# Create the undercloud configuration file
+
+- name: Verify if the undercloud configration file exist
+  stat: path=/stack/undercloud.conf
+  register: file_result
+  ignore_errors: True
+
+- name: Create the undercloud.conf file if doesn't exist
+  template: src=undercloud_config.j2 dest=~/undercloud.conf mode=0644
+  with_items: "{{ hostvars['osp8-undercloud'].underconfig }}"
+  when: not file_result.stat.exists
+
+###################
+# Fix BUG - 1391678 - It's fixed
+#- block:
+#  - name: Fix bug 1391678 - issues with rhel 7.3 - selinux-mariadb
+#    replace:
+#      dest: /usr/share/tripleo-image-elements/selinux/custom-policies/tripleo-selinux-mariadb.te
+#      regexp: 'module tripleo_selinux_mariadb'
+#      replace: 'module tripleo-selinux-mariadb'
+#      backup: yes
+#
+#  - name: Fix bug 1391678 - issues with rhel 7.3 - selinux-rabbitmq.te
+#    replace:
+#      dest: /usr/share/tripleo-image-elements/selinux/custom-policies/tripleo-selinux-rabbitmq.te
+#      regexp: 'module tripleo_selinux_rabbitmq 1.0'
+#      replace: 'module tripleo-selinux-rabbitmq 1.0'
+#      backup: yes
+
+      #  - name: Fix bug 1391678 - issues with rhel 7.3 - ipxe checkmodule
+      # replace:
+        #dest: /usr/share/instack-undercloud/ipxe/post-install.d/86-selinux
+        #regexp: '^checkmodule*$'
+        #replace: 'checkmodule -M -m -o /tmp/ironic-ipxe.mod $(dirname $0)/../selinux/ipxe.te'
+        #backup: yes
+
+        #  - name: Fix bug 1391678 - issues with rhel 7.3 - ipxe sudo
+        #replace:
+          #dest: /usr/share/instack-undercloud/ipxe/post-install.d/86-selinux
+          #regexp:  '^sudo semodule_package*$'
+          #replace: 'sudo semodule_package -m /tmp/ironic-ipxe.mod -o /opt/stack/selinux-policy/ipxe.pp'
+#  become: true
+#  become_user: root
+#    
+###################
+
+- name: Find if Undercloud is successfully completed
+  vars:
+    undercloud_log_file: "/home/stack/undercloud_install_initial_install.log"
+    success_rslt: "END return value: 0"
+  shell: grep "{{ success_rslt }}" {{ undercloud_log_file }}
+  register: Find_rslt
+  ignore_errors: true
+
+
+# Configure the undercloud network
+- block:
+  - name: install the undercloud
+    shell: /usr/bin/openstack undercloud install --debug &> /home/stack/undercloud_install_initial_install.log
+    ignore_errors: yes
+    register: uc_status
+  
+  - name: get overview about what went wrong in undercloud installation
+    shell: |
+         tail -n 200 /home/stack/undercloud_install_initial_install.log
+    ignore_errors: yes
+    when: uc_status.rc != 0
+  
+  - name: check if undercloud failed
+    fail: msg="Undercloud install failed"
+    when: uc_status.rc != 0
+  when: Find_rslt is not defined or Find_rslt.rc != 0
+
+- name: Verify bootif-fix service exist
+  shell: systemctl -l |grep bootif-fix
+  register: bootiffix_rslt
+  ignore_errors: true
+
+# Configure the undercloud boot fix
+- block:
+  - name: create bootif-fix 
+    template: src=bootif-fix.j2 dest=/usr/bin/bootif-fix mode=0755
+  - name: create bootif-fix service
+    template: src=bootif-fix.service.j2 dest=/usr/lib/systemd/system/bootif-fix.service mode=0644
+  - name: Load daemon
+    sudo: yes
+    command: systemctl daemon-reload 
+  - name: start bootif-fix
+    service: name=bootif-fix state=restarted
+  - name: enable bootif-fix
+    service: name=bootif-fix enabled=yes
+  become: yes
+  when: bootiffix_rslt is not defined or Find_rslt.rc != 0
+
+################
+## Fix bug 
+##
+## Article https://access.redhat.com/solutions/2332151
+##
+## we set power_wait to 12 and power_retry is at 8
+- block:
+  - name: fix - set the ironic power_wait to 12
+    lineinfile: dest=/etc/ironic/ironic.conf line="power_wait=12"
+    register: powerwait
+
+  - name: fix - set the ironic power_retry to 8 
+    lineinfile: dest=/etc/ironic/ironic.conf line="power_retry=8"
+    register: powerretry
+
+  - name: restart openstack-ironic-conductor.service
+    systemd: state=restarted daemon_reload=yes name=openstack-ironic-conductor.service
+    when: powerwait.changed or powerretry.changed
+  become: yes
+  become_user: root
+
+    
+###############

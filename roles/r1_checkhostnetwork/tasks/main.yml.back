@@ -1,0 +1,51 @@
+---
+# tasks -  Verifying/create server host "provisioning" networks
+
+- name: Verify server host virtual  network
+  command: /usr/bin/virsh net-list 
+  register: network_list
+- debug: var=network_list.stdout
+  tags: 
+    - host_net_provisioning
+    - host_net_all
+
+# If provisioning network missing - add it
+  vars:
+    virt_net: "{{ net_provisioning }}"
+- block:
+  - copy:
+      src: "{{ net_prov_xml_file }}"
+      dest: "{{ net_prov_path }}"
+  - command: 
+      /usr/bin/virsh net-define {{ net_prov_path }}
+  - command: 
+      /usr/bin/virsh net-autostart {{ net_provisioning }}
+  - debug: msg=' Call start provisioning network'
+#      virt_net: "{{ net_provisioning }}"
+    notify: 
+#      - start_provisioning_net
+      - start_virt_net
+  when: network_list.stdout.find('{{ net_provisioning }}') == -1
+  tags: 
+    - host_net_provisioning
+    - host_net_all
+
+# Tasks - Verify/create server host default network
+
+- block:
+  - copy:
+      src: "{{ net_default_xml_file }}"
+      dest: "{{ net_default_path }}"
+  - command:
+      /usr/bin/virsh net-define {{ net_default_path }}
+  - command:
+      /usr/bin/virsh net-autostart {{ net_default }}
+    notify:
+#      - start_default_net
+      virt_net = "{{ net_default }}"
+      - start_virt_net
+  when: network_list.stdout.find('{{ net_default }}') == -1
+  tags: 
+    - host_net_provisioning
+    - host_net_all
+

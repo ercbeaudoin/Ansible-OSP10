@@ -1,0 +1,31 @@
+# overcloudnodes variable is used to specify if the overcloud will include CEPH or not
+# Without CEPH
+overcloudnodes: osp8-overclouddeploy
+# With CEPH
+#overcloudnodes: osp8-overclouddeploy-ceph
+undercloudname: osp8-undercloud
+#with_storage: False
+stack_passwd: Redhat01
+extra_name: osp8
+control_name: control
+compute_name: compute
+ceph_name: ceph
+stack_user: stack
+#flavors:
+#  compute:
+#    ram: 8192
+#    cpu: 4
+#    disk: 60
+#  control:
+#    ram: 8192
+#    cpu: 4
+#    disk: 60
+#  baremetal:  
+#    ram: 8192
+#    cpu: 4
+#    disk: 58
+    #undercloud_name: undercloud-osp-8
+    #undercloud_ip: 192.168.122.253
+host_net_default_ip: 192.168.122.1
+#undercloud_passwd: Redhat01
+#overcloud_name: -osp8-node

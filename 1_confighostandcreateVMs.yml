@@ -1,0 +1,7 @@
+---
+#- name: Prepare the host server that host the undercloud and overcloud VMs
+- name: Setup the server host Virtual network
+  hosts: serverhost
+  roles:
+    - { role: r1_checkhostnetwork }
+    - { role: r1_createVMs }

@@ -1,0 +1,65 @@
+---
+- name: import secret variable file
+  include_vars: "secret.yml"
+#  no_log: true
+
+#- name: Copy the host server ssh key to the undercloud
+#  authorized_key: user=root key="{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+- name: Set {{ hostvars['osp8-undercloud'].undercloud_name }} hostname
+  shell: hostnamectl set-hostname {{ hostvars['osp8-undercloud'].undercloud_name }}
+  register: sethostname_result
+  when: ("osp8-undercloud" != "{{ ansible_hostname }}")
+
+- name: Copy the hostname to the hosts file
+  shell: echo -e "{{ hostvars['osp8-undercloud'].net.ip }}\t{{ hostvars['osp8-undercloud'].undercloud_name }}.redhat.local\t{{ hostvars['osp8-undercloud'].undercloud_name }}" >> /etc/hosts
+  when: sethostname_result.changed 
+
+- name: restart network service
+  shell: systemctl restart network.service; sleep 3
+  when: sethostname_result.changed
+
+- name: Add stack user to the sudoers
+  action: 'lineinfile dest=/etc/sudoers.d/stack state=present create=yes regexp="stack .*" line="stack ALL=(ALL) NOPASSWD: ALL"'
+
+- name: Ensure /etc/sudoers.d/stack file has correct permissions
+  action: file path=/etc/sudoers.d/stack mode=0440 state=file owner=root group=root
+
+## Register the system
+- name: Register the server
+  redhat_subscription: state=present username={{ sub_user.name }} password={{ sub_user.pw }} autosubscribe=true activationkey={{ sub_user.name }} org_id=1979710
+  register: new_register
+
+- name: If first time - Disable all repos
+  shell: subscription-manager repos --disable=*
+  when: new_register.changed
+
+# need to disable all first!!!!
+
+- name: Get list of repos
+  shell: yum repolist
+  register: yum_repolist
+
+- name: Enable repository
+  shell: subscription-manager repos --enable {{ item }}
+  with_items: "{{ rhsm_repos }}"
+  when: item not in yum_repolist.stdout
+
+- name: Install ipxe-roms-qemu
+  yum: name=ipxe-roms-qemu state=latest
+
+# Update the server
+- name: upgrade all packages
+  yum: name=* state=latest
+  register: upgr
+
+- name: restart undercloud
+  shell: sleep 2 && /sbin/shutdown -r now "Ansible system reboot"
+  async: 1
+  poll: 0
+  ignore_errors: true
+  when: not upgr.rc
+
+# Pause the deployment
+- name: Pause the deployment
+  pause: minutes=1
+  when: not upgr.rc

@@ -1,0 +1,12 @@
+generic_name: control
+cpu: 4
+mem: 8192
+virt_type: kvm
+virt_hypervisor: hvm
+os:
+  type: linux
+  variant: rhel7
+disk:
+  path: /var/lib/libvirt/images
+  size: 60
+

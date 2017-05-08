@@ -1,0 +1,18 @@
+---
+- name: test conditions
+  hosts: serverhost
+  vars:
+    net_default: default
+
+  tasks:
+    - stat: path=/var/lib/libvirt/images/osp8-undercloud.qcow2
+      register: sym
+    - debug: msg="islnk isn't defined (path doesn't exist)"
+      when: sym.stat.islnk is not defined
+    - debug: msg="islnk is defined (path must exist)"
+      when: sym.stat.islnk is defined
+    - debug: msg="Path exists and is a symlink"
+      when: sym.stat.islnk is defined and sym.stat.islnk
+    - debug: msg="Path exists and isn't a symlink"
+      when: sym.stat.islnk is defined and sym.stat.islnk == False
+

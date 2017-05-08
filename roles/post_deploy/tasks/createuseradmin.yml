@@ -1,0 +1,25 @@
+---
+- name: find role ids
+  shell: >
+    . ~/overcloudrc &&
+    openstack role show admin |
+    awk '/ id /{ print $4 }'
+  register: role_ids
+  changed_when: false
+  failed_when: role_ids.stdout == ""
+
+  
+#- name: find if admin user exist for {{ item }}
+#  shell: >
+  #    . ~/overcloudrc &&
+  #  export OS_TENANT_NAME={{ item }} &&
+  #  openstack user list | grep admin
+  #register: project_user_admin
+  #changed_when: false
+
+- name: Add admin user to the projects with admin role
+  shell: >
+    . ~/overcloudrc &&
+    openstack role add --user admin --project {{ item }} {{ role_ids.stdout }}
+  when: project_user_admin.stdout == ""
+  ignore_errors: yes

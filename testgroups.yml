@@ -1,0 +1,13 @@
+---
+- hosts: serverhost
+  tasks:
+          #  - debug: msg="{{ item }} - variable name is {{ hostvars[item] }}"
+          #    when: '"ceph" in item'
+          #    with_items: "{{groups[overcloudnodes]}}" 
+
+  - debug: var=groups['osp8-control'][0]
+  - debug: msg="{{ hostvars[groups['osp8-' + item][0]].mem }}"
+    with_items: 
+      - control
+
+

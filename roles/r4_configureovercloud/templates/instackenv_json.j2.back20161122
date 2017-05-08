@@ -1,0 +1,25 @@
+{
+  "ssh-user": "{{ stack_user }}",
+  "ssh-key": "{{ stack_pkey }}",
+  "power_manager": "nova.virt.baremetal.virtual_power_driver.VirtualPowerManager",
+  "host-ip": "{{ host_net_default_ip }}",
+  "arch": "x86_64",
+  "nodes": [
+    {% for node in groups[overcloudnodes] %}
+    {
+      "name": "{{ node }}",
+      "pm_addr": "{{ host_net_default_ip }}",
+      "pm_password": "{{ stack_pkey }}",
+      "pm_type": "pxe_ssh",
+      "mac": [
+        "{{ hostvars[node].net.mac }}"
+      ],
+      "cpu": "{{ hostvars[node].cpu }}",
+      "memory": "{{ hostvars[node].mem }}",
+      "disk": "{{ hostvars[node].disk.size }}",
+      "arch": "x86_64",
+      "pm_user": "{{ stack_user }}"
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ]
+}

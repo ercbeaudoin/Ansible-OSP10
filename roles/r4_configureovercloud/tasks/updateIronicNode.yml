@@ -1,0 +1,25 @@
+---
+- debug: var=item
+
+- name: update control nodes with flavor
+  shell: >
+    . ~/stackrc && ironic node-update \
+    $(ironic port-show --address {{ hostvars[item].net.mac }} |  awk '/node_uuid/{ print $4 }') \
+    add properties/capabilities='profile:control,boot_option:local'
+  when: '"control" in item'
+
+- name: update compute nodes with flavor
+  shell: >
+    . ~/stackrc && ironic node-update \
+    $(ironic port-show --address {{ hostvars[item].net.mac }} |  awk '/node_uuid/{ print $4 }') \
+    add properties/capabilities='profile:compute,boot_option:local'
+  when: '"compute" in item'
+
+- name: update ceph nodes with flavor
+  shell: >
+    . ~/stackrc && ironic node-update \
+    $(ironic port-show --address {{ hostvars[item].net.mac }} |  awk '/node_uuid/{ print $4 }') \
+    add properties/capabilities='profile:ceph,boot_option:local'
+  when: '"ceph" in item'
+
+

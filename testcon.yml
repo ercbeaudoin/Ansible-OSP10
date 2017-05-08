@@ -1,0 +1,45 @@
+---
+- name: test conditions
+  hosts: serverhost
+  vars:
+    net_default: default
+  tasks:
+  - name: get list of vms
+    virt: command=list_vms
+    register: virt_vms
+        
+  - name: get list of vms
+    virt_net: command=list_nets
+    register: virt_net_list
+
+  - name: Get default network details
+    virt_net: command=get_xml name=default
+    register: default_xml
+    when: ("{{ net_default }}" in "{{ virt_net_list.list_nets }}")
+
+  - name: Test {{ hostvars['osp8-undercloud'] }} 
+    command: echo testAA
+    when: ("osp8-undercloud" not in "{{ virt_vms.list_vms }}")
+
+#    when: ("{{ hostvars['osp8-undercloud'].undercloud_name }}" not in "{{ virt_net_list.list_vms }}")
+
+  - name: test1
+    command: echo test1
+    when: (default_xml is defined) and ("{{ net_default }}" in "{{ virt_net_list.list_nets }}") and ("DHCP" in "{{ default_xml.get_xml }}")
+
+  - name: "----> Verify : ({{ net_default }} in {{ virt_net_list.list_nets }})"
+    command: echo test2
+    when: ("{{ net_default }}" in "{{ virt_net_list.list_nets }}")
+
+
+#  - name: ('"{{ net_default }}" in {{ virt_net_list.list_nets }}')
+#    command: echo test2 
+#    when: ('"{{ net_default }}" in {{ virt_net_list.list_nets }}')
+
+#- debug: var=default_xml
+#- debug: msg="('"{{ net_default }}" in {{ virt_net_list.list_nets }}') and ('"DHCP" in {{ default_xml.get_xml }}')"
+#- debug: msg="('"{{ net_default }}" in {{ virt_net_list.list_nets }}')"
+#- debug: var="('"{{ net_default }}" in virt_net_list.list_nets')"
+#- debug: var=('"DHCP" in {{ default_xml.get_xml }}')
+
+

@@ -1,0 +1,5 @@
+# Image
+image_path: /var/lib/libvirt/images/
+image_rhel7_guest: 'rhel73-guest.qcow2'
+image_size: 1280311296
+image_full_path: /var/lib/libvirt/images/rhel73-guest.qcow2

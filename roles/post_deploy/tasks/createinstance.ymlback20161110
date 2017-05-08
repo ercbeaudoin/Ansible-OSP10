@@ -1,0 +1,30 @@
+---
+- name: Get Instance list
+  shell: >
+    . ~/overcloudrc &&
+    export OS_TENANT_NAME={{ item }} &&
+    nova list
+  register: images
+  changed_when: false
+
+- block:
+  - name: Create instance
+    shell: >
+      . ~/overcloudrc &&
+      export OS_TENANT_NAME={{ item }} &&
+      internal_net=$(neutron net-list --os-project-name {{ item }}| awk ' /internal/ {print $2;}') &&
+      nova boot --flavor m1.tiny --nic net-id=$internal_net \
+      --image cirros overcloud-test 
+    
+  - name: Adding the floating IPs
+    shell: . ~/overcloudrc && export OS_TENANT_NAME={{ item }} && neutron floatingip-create management --os-project-name {{ item }} | awk ' /floating_ip_address/ {print $4;}'
+    register: floatingip 
+    
+  - name: Associate network IP to the project {{ time }}
+    shell: >
+      . ~/overcloudrc &&
+      export OS_TENANT_NAME={{ item }} &&
+      nova add-floating-ip overcloud-test {{ floatingip.stdout }}
+  when: '"overcloud-test" not in images.stdout'
+
+# export OS_TENANT_NAME={{ item }} &&

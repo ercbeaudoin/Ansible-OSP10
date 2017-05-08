@@ -1,0 +1,21 @@
+---
+- name: Get default security groups
+  shell: >
+    . ~/overcloudrc && 
+    openstack security group rule list default -f json
+  changed_when: false
+  failed_when: default_security.stdout==""
+  register: default_security
+
+- name: Add tcp 22 security group
+  shell: >
+    . ~/overcloudrc && 
+    nova secgroup-add-rule default tcp 22 22 0.0.0.0/0
+  when: '"tcp" not in default_security.stdout | from_json | map(attribute="IP Protocol") | list'
+
+   
+- name: Add icmp security group
+  shell: >
+    . ~/overcloudrc && 
+    nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
+  when: '"icmp" not in default_security.stdout | from_json | map(attribute="IP Protocol") | list'

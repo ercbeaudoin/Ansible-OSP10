@@ -1,0 +1,39 @@
+---
+#- name: import secret variable file
+#  include_vars: "secret.yml"
+#  no_log: true
+
+- name: Get external ouvercloud route
+  shell: sudo ip route show |grep "172.17.1.0"|wc -l
+  register: findroute
+  ignore_errors: True
+
+- name: add default route to the external overcloud network
+  shell: sudo ip route add 172.17.1.0/24 via 172.16.0.1
+  when: findroute is not defined or findroute.stdout == 0
+
+
+  #- name: Copy the registration files in my_templates folder
+  #  shell: cp -r /usr/share/openstack-tripleo-heat-templates/extraconfig/pre_deploy/rhel-registration /home/stack/my_templates/.
+
+  #- name: Copy the registration files from the Heat template collection
+  #  template: src=environment-rhel-registration.yaml.j2  dest=/home/stack/my_templates/rhel-registration/environment-rhel-registration.yaml owner=stack
+
+  #- name: Modify the registration scritp file to disable repos 
+  #  shell: sed -i -e 's/^repos=.*/repos="repos --disable=* --enable rhel-7-server-rpms"/' /home/stack/my_templates/rhel-registration/scripts/rhel-registration
+
+
+  #2- name: Modify the domain name
+  #  replace: dest=/home/stack/my_templates/overcloud.yaml regexp='localdomain' replace='lab.local' backup=yes
+
+
+- name: Deploy the overcloud without CEPH
+  shell: >
+    . ~/stackrc && {{ lookup('template','deployovercloud.j2') }} 
+  when: '"ceph" not in "{{ overcloudnodes }}"'
+
+
+- name: Deploy the overcloud WITH ceph
+  shell: >
+    . ~/stackrc && {{ lookup('template','deployovercloud_withceph.j2') }} 
+  when: '"ceph" in "{{ overcloudnodes }}"'

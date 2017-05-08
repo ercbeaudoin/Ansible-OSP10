@@ -1,0 +1,45 @@
+---
+- name: Get networks
+  shell: . ~/overcloudrc && openstack network list --long --column Name --column ID --column Project -f json
+  register: networks
+  changed_when: false
+  ignore_errors: true
+
+# miss get network by project
+- block:
+    - name: Create external management network
+      shell: . ~/overcloudrc && neutron net-create management --router:external
+    
+    - name: Create subnet public
+      shell: . ~/overcloudrc && neutron subnet-create management 172.16.0.0/24 \
+        --name management_subnet --enable-dhcp=False --allocation-pool \
+        start=172.16.0.210,end=172.16.0.230 --dns-nameserver 192.168.122.1
+#  when: '"management" not in networks.stdout | from_json | map(attribute="Name") | list'
+
+    - name: create internal network
+      shell: >
+        . ~/overcloudrc && 
+        neutron net-create internal 
+
+    - name: Create subnet Internal
+      shell: >
+        . ~/overcloudrc && 
+        neutron subnet-create internal 192.168.0.0/24 --name internal_subnet
+
+    - name: Create router
+      shell: >
+        . ~/overcloudrc && 
+        neutron router-create internal_router
+
+    - name: Create gateway
+      shell: >
+        . ~/overcloudrc && 
+        neutron router-gateway-set internal_router management
+
+    - name: Connect the internal network to the router
+      shell: >
+        . ~/overcloudrc && 
+        neutron router-interface-add internal_router internal_subnet
+
+    # need to add condition for each project
+  when: '"management" not in networks.stdout | from_json | map(attribute="Name") | list'
