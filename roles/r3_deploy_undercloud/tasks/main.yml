@@ -13,6 +13,10 @@
   yum: name=openstack-utils state=present
   sudo: yes
 
+- name: openstack-selinux
+  yum: name=openstack-utils state=present
+  sudo: yes
+  
 # Create the undercloud configuration file
 
 - name: Verify if the undercloud configration file exist
@@ -22,42 +26,9 @@
 
 - name: Create the undercloud.conf file if doesn't exist
   template: src=undercloud_config.j2 dest=~/undercloud.conf mode=0644
-  with_items: "{{ hostvars['osp8-undercloud'].underconfig }}"
+  with_items: "{{ hostvars['osp10-undercloud'].underconfig }}"
   when: not file_result.stat.exists
 
-###################
-# Fix BUG - 1391678 - It's fixed
-#- block:
-#  - name: Fix bug 1391678 - issues with rhel 7.3 - selinux-mariadb
-#    replace:
-#      dest: /usr/share/tripleo-image-elements/selinux/custom-policies/tripleo-selinux-mariadb.te
-#      regexp: 'module tripleo_selinux_mariadb'
-#      replace: 'module tripleo-selinux-mariadb'
-#      backup: yes
-#
-#  - name: Fix bug 1391678 - issues with rhel 7.3 - selinux-rabbitmq.te
-#    replace:
-#      dest: /usr/share/tripleo-image-elements/selinux/custom-policies/tripleo-selinux-rabbitmq.te
-#      regexp: 'module tripleo_selinux_rabbitmq 1.0'
-#      replace: 'module tripleo-selinux-rabbitmq 1.0'
-#      backup: yes
-
-      #  - name: Fix bug 1391678 - issues with rhel 7.3 - ipxe checkmodule
-      # replace:
-        #dest: /usr/share/instack-undercloud/ipxe/post-install.d/86-selinux
-        #regexp: '^checkmodule*$'
-        #replace: 'checkmodule -M -m -o /tmp/ironic-ipxe.mod $(dirname $0)/../selinux/ipxe.te'
-        #backup: yes
-
-        #  - name: Fix bug 1391678 - issues with rhel 7.3 - ipxe sudo
-        #replace:
-          #dest: /usr/share/instack-undercloud/ipxe/post-install.d/86-selinux
-          #regexp:  '^sudo semodule_package*$'
-          #replace: 'sudo semodule_package -m /tmp/ironic-ipxe.mod -o /opt/stack/selinux-policy/ipxe.pp'
-#  become: true
-#  become_user: root
-#    
-###################
 
 - name: Find if Undercloud is successfully completed
   vars:

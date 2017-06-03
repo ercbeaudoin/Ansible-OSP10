@@ -1,6 +1,6 @@
 ---
 - name: Configure the undercloud
-  hosts: osp8-undercloud
+  hosts: osp10-undercloud
   remote_user: stack
 #  become: yes
   roles:

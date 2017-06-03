@@ -11,23 +11,18 @@
   register: default_xml
   when: net_default in virt_net_list.list_nets
 
-- name: Destroy default network if DHCP enable
-  virt_net: name=default state=absent
-  when: (default_xml is defined) and ("{{ net_default }}" in "{{ virt_net_list.list_nets }}") and ("DHCP" in "{{ default_xml.get_xml }}")
+  #- name: Destroy default network if DHCP enable
+  #  virt_net: name=default state=absent
+  #  when: (default_xml is defined) and ("{{ net_default }}" in "{{ virt_net_list.list_nets }}") and ("DHCP" in "{{ default_xml.get_xml }}")
 
-  #  when: ("{{ net_default }}" in {{ virt_net_list.list_nets }}) and ('"DHCP" in {{ default_xml.get_xml }}')
-
-#- name: Undefine default network if DHCP enable
-#  virt_net: command=undefine name=default state=
-#  when: ('"{{ net_default }}" in {{ virt_net_list.list_nets}}') and ('"DHCP" in default_xml.get_xml')
 
 ####### Default virtual network ########
 
 - name: Create the default network if does not exist
   virt_net: command=define name={{ net_default }} autostart=yes xml='{{ lookup("template", "net_default_nodhcp_file.xml.j2") }}'
-  when: (default_xml is defined) and (("{{ net_default }}" not in "{{ virt_net_list.list_nets }}") or ("DHCP" in "{{ default_xml.get_xml }}"))
+  when: (default_xml is defined) and (("{{ net_default }}" not in "{{ virt_net_list.list_nets }}"))
 
-#  when: ('{{ net_default }} not in {{ virt_net_list.list_nets }}') or ('"DHCP" in {{ default_xml.get_xml }}')
+#when: (default_xml is defined) and (("{{ net_default }}" not in "{{ virt_net_list.list_nets }}") or ("DHCP" in "{{ default_xml.get_xml }}"))
 
 
 - name: Ensure that a network is active

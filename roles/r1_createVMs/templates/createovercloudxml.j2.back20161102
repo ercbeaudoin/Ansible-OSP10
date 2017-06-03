@@ -1,3 +1,0 @@
-#!/bin/bash
-/usr/bin/virt-install --ram {{hostvars[item].mem}} --vcpus {{hostvars[item].cpu}} --os-variant {{hostvars[item].os.variant}} --disk path={{hostvars[item].disk.path}}/{{item}}.qcow2,device=disk,bus=virtio,format=qcow2 --noautoconsole --vnc --network network:provisioning,mac={{hostvars[item].net.mac}} --network network:default --name {{item}} --dry-run --print-xml  > /tmp/{{item}}.xml; 
-virsh define --file /tmp/{{item}}.xml; 

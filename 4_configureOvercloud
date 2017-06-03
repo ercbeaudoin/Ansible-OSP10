@@ -1,6 +1,6 @@
 ---
 - name: Configure overcloud
-  hosts: osp8-undercloud
+  hosts: osp10-undercloud
   user: stack
   roles:
     - r4_configureovercloud

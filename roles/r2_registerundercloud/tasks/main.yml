@@ -5,13 +5,13 @@
 
 #- name: Copy the host server ssh key to the undercloud
 #  authorized_key: user=root key="{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
-- name: Set {{ hostvars['osp8-undercloud'].undercloud_name }} hostname
-  shell: hostnamectl set-hostname {{ hostvars['osp8-undercloud'].undercloud_name }}
+- name: Set {{ hostvars['osp10-undercloud'].undercloud_name }} hostname
+  shell: hostnamectl set-hostname {{ hostvars['osp10-undercloud'].undercloud_name }}
   register: sethostname_result
-  when: ("osp8-undercloud" != "{{ ansible_hostname }}")
+  when: ("osp10-undercloud" != "{{ ansible_hostname }}")
 
 - name: Copy the hostname to the hosts file
-  shell: echo -e "{{ hostvars['osp8-undercloud'].net.ip }}\t{{ hostvars['osp8-undercloud'].undercloud_name }}.redhat.local\t{{ hostvars['osp8-undercloud'].undercloud_name }}" >> /etc/hosts
+  shell: echo -e "{{ hostvars['osp10-undercloud'].net.ip }}\t{{ hostvars['osp10-undercloud'].undercloud_name }}.redhat.local\t{{ hostvars['osp10-undercloud'].undercloud_name }}" >> /etc/hosts
   when: sethostname_result.changed 
 
 - name: restart network service
@@ -52,14 +52,18 @@
   yum: name=* state=latest
   register: upgr
 
+  
+- debug: var=upgr
+- debug: msg="{{ upgr.rc }}"
+
 - name: restart undercloud
   shell: sleep 2 && /sbin/shutdown -r now "Ansible system reboot"
   async: 1
   poll: 0
   ignore_errors: true
-  when: not upgr.rc
+  when: upgr.rc == 1
 
 # Pause the deployment
 - name: Pause the deployment
-  pause: minutes=1
-  when: not upgr.rc
+  pause: minutes=2
+  when: upgr.rc == 1

@@ -1,6 +1,6 @@
 ---
 - name: Post deploy 
-  hosts: osp8-undercloud
+  hosts: osp10-undercloud
   user: stack
   roles:
     - post_deploy

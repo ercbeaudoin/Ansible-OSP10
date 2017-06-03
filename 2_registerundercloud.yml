@@ -1,6 +1,6 @@
 ---
 - name: Register the undercloud
-  hosts: osp8-undercloud
+  hosts: osp10-undercloud
   tasks:
   roles:
   - r2_registerundercloud

@@ -1,6 +1,6 @@
 ---
 - name: Deploy overcloud
-  hosts: osp8-undercloud
+  hosts: osp10-undercloud
   user: stack
   roles:
     - r5_deploy_overcloud

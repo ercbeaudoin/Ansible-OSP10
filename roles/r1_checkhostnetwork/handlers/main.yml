@@ -1,7 +1,0 @@
-#- name: start_provisioning_net
-#  command: /usr/bin/virsh net-start {{ net_provisioning }}
-#- name: start_default_net
-#  command: /usr/bin/virsh net-start {{ net_default }}
-#- name: start_virt_net
-#  command: /usr/bin/virsh net-start {{ virt_net }}
-#- debug: msg=' Start network server {{ virt_net }}' 

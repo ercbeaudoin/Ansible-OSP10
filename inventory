@@ -3,52 +3,52 @@
 #192.168.41.80
 127.0.0.1
 
-[osp8-undercloud]
+[osp10-undercloud]
 #192.168.122.253
-osp8-undercloud  ansible_host=192.168.122.253
+osp10-undercloud  ansible_host=192.168.122.253
 
 
-[osp8-control]
-osp8-control1
-osp8-control2
-osp8-control3
+[osp10-control]
+osp10-control1
+osp10-control2
+osp10-control3
 
-[osp8-compute]
-osp8-compute1
-osp8-compute2
+[osp10-compute]
+osp10-compute1
+osp10-compute2
 
-[osp8-ceph]
-osp8-ceph1
-osp8-ceph2
-osp8-ceph3
+[osp10-ceph]
+osp10-ceph1
+osp10-ceph2
+osp10-ceph3
 
-[osp8-baremetal]
-osp8-baremetal
+[osp10-baremetal]
+osp10-baremetal
 
-[osp8-withceph:children]
-osp8-control
-osp8-compute
-osp8-ceph
+[osp10-withceph:children]
+osp10-control
+osp10-compute
+osp10-ceph
 
-#[osp8-withoutceph:children]
-[osp8-flavor]
-osp8-control
-osp8-compute
-osp8-baremetal
+#[osp10-withoutceph:children]
+[osp10-flavor]
+osp10-control
+osp10-compute
+osp10-baremetal
 
-[osp8-overclouddeploy]
-osp8-control1  ansible_host=172.16.0.37
-osp8-control2
-osp8-control3
-osp8-compute1
-osp8-compute2
+[osp10-overclouddeploy]
+osp10-control1  ansible_host=172.16.0.37
+osp10-control2
+osp10-control3
+osp10-compute1
+osp10-compute2
 
-[osp8-overclouddeploy-ceph]
-osp8-control1  ansible_host=172.16.0.75
-osp8-control2
-osp8-control3
-osp8-compute1
-osp8-compute2
-osp8-ceph1
-osp8-ceph2
-osp8-ceph3
+[osp10-overclouddeploy-ceph]
+osp10-control1  ansible_host=172.16.0.75
+osp10-control2
+osp10-control3
+osp10-compute1
+osp10-compute2
+osp10-ceph1
+osp10-ceph2
+osp10-ceph3

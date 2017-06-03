@@ -8,17 +8,19 @@
   become_user: root
 
 - name: Register the undercloud
-  hosts: osp8-undercloud
+  hosts: osp10-undercloud
   roles:
     - r2_registerundercloud
   become: yes
   become_user: root
 
 - name: Configure the undercloud
-  hosts: osp8-undercloud
+  hosts: osp10-undercloud
+  remote_user: stack
   roles:
     - r3_deploy_undercloud 
     - r4_configureovercloud
     - r5_deploy_overcloud
-  remote_user: stack
+
+#    remote_user: stack
 
