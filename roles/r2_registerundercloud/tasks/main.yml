@@ -26,7 +26,7 @@
 
 ## Register the system
 - name: Register the server
-  redhat_subscription: state=present autosubscribe=true activationkey={{ sub_user.name }} org_id= {{ org_id }}
+  redhat_subscription: state=present autosubscribe=true activationkey={{ sub_user.name }} org_id={{ sub_user.org_id }}
   register: new_register
 
 - name: If first time - Disable all repos
