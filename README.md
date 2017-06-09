@@ -6,10 +6,12 @@ host: Dell 7500 2 cpu with 96Gib memory
 I divided the project in different roles to make it easier to troubleshoot.
 See below the details.
 
-By defaul the server are configured with 8G memory
+Note: By defaul the server are configured with 8G memory
 You can change the memory used by each type of server by modifying the following files:
 under groupvars/
-baremetal.yml  osp10-baremetal.yml  osp10-ceph.yml  osp10-compute.yml  osp10-control.yml
+>>baremetal.yml  osp10-baremetal.yml  osp10-ceph.yml  osp10-compute.yml  osp10-control.yml
+
+Note2: This project deploys one undercloud + OSP10 overcloud (3 Controllers, 2 compute) by default
 
 ## Configure the hyperversor network and create the undercloud/overcloud VMs
 1_confighostandcreateVMs.yml 
