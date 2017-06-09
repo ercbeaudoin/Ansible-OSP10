@@ -1,5 +1,5 @@
 #*******************************#
-# Project - Install OSP 8 using #
+# Project - Install OSP 10 using #
 ###Server details
 host: Dell 7500 2 cpu with 96Gib memory
 
