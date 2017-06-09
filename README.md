@@ -9,7 +9,10 @@ See below the details.
 Note: By defaul the server are configured with 8G memory
 You can change the memory used by each type of server by modifying the following files:
 under groupvars/
->>baremetal.yml  osp10-baremetal.yml  osp10-ceph.yml  osp10-compute.yml  osp10-control.yml
+>>baremetal.yml  
+>>osp10-baremetal.yml  
+>>osp10-compute.yml  
+>>osp10-control.yml
 
 Note2: This project deploys one undercloud + OSP10 overcloud (3 Controllers, 2 compute) by default
 
