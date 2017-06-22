@@ -1,4 +1,7 @@
 #!/bin/bash
+echo "Unregister system"
+ansible-playbook unregister_undercloud.yml
+
 echo "remove stack user"
 userdel -r stack
 

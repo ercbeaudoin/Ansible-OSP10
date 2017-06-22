@@ -1,0 +1,14 @@
+---
+- name: test conditions
+  hosts: serverhost
+  vars:
+   rhel_guest: "http://download-node-02.eng.bos.redhat.com/brewroot/packages/rhel-guest-image/7.3/36/images/rhel-guest-image-7.3-36.x86_64.qcow2"
+   rhel_guest_image_name: "rhel-guest-image-7.3-36.x86_64.qcow2"
+  tasks:
+  - name: Download RHEL image if the undercloud image is not already created and modified
+    get_url:
+      url: "{{ rhel_guest }}"
+      dest: /var/lib/libvirt/images/{{ rhel_guest_image_name }}
+      checksum: md5:32187e398990f6061871d9ce087aadd4
+  become: yes
+  become_user: root

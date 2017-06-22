@@ -1,0 +1,9 @@
+---
+  - hosts: osp10-undercloud
+    tasks:
+      - name: Unregister Ceph server
+        redhat_subscription:
+          state: absent
+    become: yes
+    become_user: root
+

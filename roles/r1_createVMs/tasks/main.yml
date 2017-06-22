@@ -21,15 +21,23 @@
 #  ignore_errors: yes  
 
 # Verify the rhel73 image exist and it has the good size
-- find: paths="{{ image_path }}" recurse=no patterns="rhel73-guest.qcow2" size="{{ image_size }}"
-  register: file_to_copy
+#- find: paths="{{ image_path }}" recurse=no patterns="rhel73-guest.qcow2" size="{{ image_size }}"
+#  register: file_to_copy
 
-- name: Copy the default rhel 7.3 image if doesnt exist
-  copy:
-    src: "rhel73-guest.qcow2"
-    dest: "{{ image_path }}" 
-    mode: 0755
-  when: not file_to_copy.matched
+# Download RHEL image if doesn't exist
+- name: Download RHEL image if the undercloud image is not already created and modified
+  get_url:
+    url: "{{ rhel_guest_url }}"
+    dest: /var/lib/libvirt/images/{{ image_rhel7_guest }}
+    checksum: md5:32187e398990f6061871d9ce087aadd4
+
+  
+    #- name: Copy the default rhel 7.3 image if doesnt exist
+  #  copy:
+  # src: "rhel73-guest.qcow2"
+  #  dest: "{{ image_path }}" 
+  #  mode: 0755
+  #when: not file_to_copy.matched
 
 ######################################
 #
@@ -42,7 +50,6 @@
 #  6) Add stack user and provide key 
 
 # Verify the undercloud image exist and it has the good size
-#- find: paths="{{ image_path }}" recurse=no patterns="{{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2" size="{{ hostvars['osp10-undercloud'].undercloud_image_size }}"
 - name: Verify if {{ image_path }}{{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2 exist
   find: paths="{{ image_path }}" recurse=yes patterns="osp10-undercloud.qcow2" size="{{ hostvars['osp10-undercloud'].undercloud_image_size }}"
   register: image_to_create
