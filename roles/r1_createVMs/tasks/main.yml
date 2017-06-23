@@ -36,13 +36,6 @@
   find: paths="{{ image_path }}" recurse=yes patterns="osp10-undercloud.qcow2" size="{{ hostvars['osp10-undercloud'].undercloud_image_size }}"
   register: image_to_create
 
-#- name: make a copy of the base image to avoid to have downloaded it again
-#  copy:
-#    src: "{{ image_path }}{{ image_rhel7_orign }}"
-#    dest: "{{ image_path }}{{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2"
-#    remote_src: True
-#  when: not image_to_create.matched
-
 - name: Resize undercloud image (create target image)
   command: >
     qemu-img create -f qcow2 -o preallocation=off {{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2
@@ -56,11 +49,6 @@
   args:
     chdir: "{{ image_path }}"
   when: not image_to_create.matched
-
-# Create the undercloud image
-#- name: Creating the undercloud image
-#  command: /usr/bin/qemu-img  create -f qcow2 -b {{ image_path }}{{image_rhel7_guest}} {{ image_path }}{{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2
-#  when: not image_to_create.matched
 
 # Accelerate the boot process - remove cloud-init
 - name: Accelerate the boot process - remove cloud-init
