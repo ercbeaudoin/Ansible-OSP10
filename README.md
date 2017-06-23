@@ -16,13 +16,13 @@ under groupvars/
 
 Note2: This project deploys one undercloud + OSP10 overcloud (3 Controllers, 2 compute) by default
 
-## How it works
+# How it works
 1) You will need to recreate the following secret file:
->> cat roles/r3_registercephnodes/vars/secret.yml
->> sub_user:
->> name: <rhn-support-kerberos>
->> pw: <Portal credentials>
->> org_id: <Org id>
+cat roles/r3_registercephnodes/vars/secret.yml
+  sub_user:
+  name: <rhn-support-kerberos>
+  pw: <Portal credentials>
+  org_id: <Org id>
 
 To create a new vault secret.yml file
 ansible-vault create roles/r3_registercephnodes/vars/secret.yml
