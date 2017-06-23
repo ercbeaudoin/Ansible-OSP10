@@ -4,11 +4,30 @@
   vars:
    rhel_guest: "http://download-node-02.eng.bos.redhat.com/brewroot/packages/rhel-guest-image/7.3/36/images/rhel-guest-image-7.3-36.x86_64.qcow2"
    rhel_guest_image_name: "rhel-guest-image-7.3-36.x86_64.qcow2"
+   image_rhel7_guest: 'rhel73-guest.qcow2'
+   image_path: "/var/lib/libvirt/images/"
   tasks:
   - name: Download RHEL image if the undercloud image is not already created and modified
     get_url:
       url: "{{ rhel_guest }}"
       dest: /var/lib/libvirt/images/{{ rhel_guest_image_name }}
       checksum: md5:32187e398990f6061871d9ce087aadd4
-  become: yes
-  become_user: root
+
+  - name: make a copy of the base image to avoid to have downloaded it again
+    copy:
+      src: "{{ image_path }}{{ rhel_guest_image_name }}"
+      dest: "{{ image_path }}{{ image_rhel7_guest }}"
+      remote_src: True
+
+  - name: Resize undercloud image (create target image)
+    command: >
+      qemu-img create -f qcow2 -o preallocation=off {{ image_rhel7_guest }}
+      '{{ hostvars['osp10-undercloud'].disk.undercloud_disk_size }}G'
+    args:
+      chdir: "{{ image_path }}"
+
+  - name: Resize undercloud image (call virt-resize)
+    command: virt-resize --expand /dev/sda1 {{ rhel_guest_image_name }} {{ image_rhel7_guest }}
+    args: 
+      chdir: "{{ image_path }}"
+

@@ -13,31 +13,13 @@
 
 - name: Ensure /etc/sudoers.d/stack file has correct permissions
   action: file path=/etc/sudoers.d/stack mode=0440 state=file owner=root group=root
-#  when: create_stack_rc.changed
-
-#- name: Generate the undercloud root key
-#  shell: ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@{{ hostvars['osp10-undercloud'].net.ip }} 'cat /dev/zero | ssh-keygen -b 2048 -q -N ""'
-#  when: create_stack_rc.changed
-#  ignore_errors: yes  
-
-# Verify the rhel73 image exist and it has the good size
-#- find: paths="{{ image_path }}" recurse=no patterns="rhel73-guest.qcow2" size="{{ image_size }}"
-#  register: file_to_copy
 
 # Download RHEL image if doesn't exist
 - name: Download RHEL image if the undercloud image is not already created and modified
   get_url:
     url: "{{ rhel_guest_url }}"
-    dest: /var/lib/libvirt/images/{{ image_rhel7_guest }}
+    dest: /var/lib/libvirt/images/{{ image_rhel7_orign }}
     checksum: md5:32187e398990f6061871d9ce087aadd4
-
-  
-    #- name: Copy the default rhel 7.3 image if doesnt exist
-  #  copy:
-  # src: "rhel73-guest.qcow2"
-  #  dest: "{{ image_path }}" 
-  #  mode: 0755
-  #when: not file_to_copy.matched
 
 ######################################
 #
@@ -54,10 +36,31 @@
   find: paths="{{ image_path }}" recurse=yes patterns="osp10-undercloud.qcow2" size="{{ hostvars['osp10-undercloud'].undercloud_image_size }}"
   register: image_to_create
 
-# Create the undercloud image
-- name: Creating the undercloud image
-  command: /usr/bin/qemu-img  create -f qcow2 -b {{ image_path }}{{image_rhel7_guest}} {{ image_path }}{{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2
+#- name: make a copy of the base image to avoid to have downloaded it again
+#  copy:
+#    src: "{{ image_path }}{{ image_rhel7_orign }}"
+#    dest: "{{ image_path }}{{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2"
+#    remote_src: True
+#  when: not image_to_create.matched
+
+- name: Resize undercloud image (create target image)
+  command: >
+    qemu-img create -f qcow2 -o preallocation=off {{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2
+    '{{ hostvars['osp10-undercloud'].disk.undercloud_disk_size }}G'
+  args:
+    chdir: "{{ image_path }}"
   when: not image_to_create.matched
+
+- name: Resize undercloud image (call virt-resize)
+  command: virt-resize --expand /dev/sda1 {{ image_rhel7_orign }} {{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2
+  args:
+    chdir: "{{ image_path }}"
+  when: not image_to_create.matched
+
+# Create the undercloud image
+#- name: Creating the undercloud image
+#  command: /usr/bin/qemu-img  create -f qcow2 -b {{ image_path }}{{image_rhel7_guest}} {{ image_path }}{{ hostvars['osp10-undercloud'].undercloud_name }}.qcow2
+#  when: not image_to_create.matched
 
 # Accelerate the boot process - remove cloud-init
 - name: Accelerate the boot process - remove cloud-init
@@ -124,8 +127,6 @@
 
 - debug: msg="src=/tmp/{{ hostvars['osp10-undercloud'].undercloud_name }}/stackkey.pub"
 - name: Add privte undercloud stack key to host server stack auth key
-  #  copy: src=/tmp/{{ hostvars['osp10-undercloud'].undercloud_name }}/stackkey.pub dest=/home/stack/.ssh/authorized_keys owner=stack group=stack mode=0600 remote_src=False
-  #  copy: src=/tmp/{{ hostvars['osp10-undercloud'].undercloud_name }}/stackkey.pub dest=/home/stack/.ssh/authorized_keys owner=stack group=stack mode=0600 remote_src=True
   shell: cp /tmp/{{ hostvars['osp10-undercloud'].undercloud_name }}/stackkey.pub /home/stack/.ssh/authorized_keys;chown stack:stack /home/stack/.ssh/authorized_keys; chmod 0600 /home/stack/.ssh/authorized_keys
   when: not image_to_create.matched
 
