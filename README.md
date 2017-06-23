@@ -18,8 +18,9 @@ Note2: This project deploys one undercloud + OSP10 overcloud (3 Controllers, 2 c
 
 # How it works
 1) You will need to recreate the following secret file:
+
 cat roles/r3_registercephnodes/vars/secret.yml
-  sub_user:
+sub_user:
   name: <rhn-support-kerberos>
   pw: <Portal credentials>
   org_id: <Org id>
