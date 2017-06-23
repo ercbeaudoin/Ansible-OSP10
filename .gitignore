@@ -1,0 +1,3 @@
+roles/r1_createVMs/files/rhel73-guest.qcow2
+roles/r1_createVMs/files/rhel7-guest.qcow2
+*.qcow2
