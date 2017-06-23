@@ -20,13 +20,13 @@ Note2: This project deploys one undercloud + OSP10 overcloud (3 Controllers, 2 c
 1) You will need to recreate the following secret file:
 
 cat roles/r3_registercephnodes/vars/secret.yml
-sub_user:
-  name: <rhn-support-kerberos>
-  pw: <Portal credentials>
-  org_id: <Org id>
+>sub_user:
+>>name: <rhn-support-kerberos>
+>>pw: <Portal credentials>
+>>org_id: <Org id>
 
 To create a new vault secret.yml file
-ansible-vault create roles/r3_registercephnodes/vars/secret.yml
+>ansible-vault create roles/r3_registercephnodes/vars/secret.yml
 
 2) Run the playbook
 ansible-playbook main.yml -v --ask-vault-pass
