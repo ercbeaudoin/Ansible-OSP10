@@ -18,11 +18,12 @@ Note2: This project deploys one undercloud + OSP10 overcloud (3 Controllers, 2 c
 
 ## How it works
 1) You will need to recreate the following secret file:
-cat roles/r3_registercephnodes/vars/secret.yml
-sub_user:
-  name: <rhn-support-kerberos>
-  pw: <Portal credentials>
-  org_id: <Org id>
+>> cat roles/r3_registercephnodes/vars/secret.yml
+>> sub_user:
+>> name: <rhn-support-kerberos>
+>> pw: <Portal credentials>
+>> org_id: <Org id>
+
 To create a new vault secret.yml file
 ansible-vault create roles/r3_registercephnodes/vars/secret.yml
 
@@ -30,11 +31,10 @@ ansible-vault create roles/r3_registercephnodes/vars/secret.yml
 ansible-playbook main.yml -v --ask-vault-pass
 >Enter the password
 
-## To destroy the lab:
-# ./destroyOSP
+# To destroy the lab:
+ ./destroyOSP
+
 This will deregister the VMs, destroy the VMs and the disk images.
-
-
 
 ## Configure the hyperversor network and create the undercloud/overcloud VMs
 1_confighostandcreateVMs.yml 
